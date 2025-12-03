@@ -10,7 +10,7 @@ This project avoids standard Python libraries to demonstrate manual memory manag
 ## Development Roadmap
  [x] **Stage 1:** Atomic Foundation (Node Primitive & LCG Engine)
  
- [ ] **Stage 2:** Linear Data Structures (LinkedQueue, LinkedStack, CircularQueue)
+ [x] **Stage 2:** Linear Data Structures (LinkedQueue, LinkedStack, CircularQueue)
  
  [ ] **Stage 3:** Data Model (Immutable PatientRecord with Audit Trail)
  
