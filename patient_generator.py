@@ -1,6 +1,6 @@
 """
 FILE: patient_generator.py
-AUTHOR: Brayden Louis Smith (22326622)
+AUTHOR: 22326622
 MODULE: COM5013 Algorithms & Data Structures
 
 DESCRIPTION:
@@ -177,5 +177,6 @@ class patientdatagenerator:
             index = self._generate_random_index(list_length)
             selected_item = source_list[index]
             random_items.append(selected_item)
+
 
         return random_items
