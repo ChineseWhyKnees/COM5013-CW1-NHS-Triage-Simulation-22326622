@@ -14,7 +14,7 @@ This project avoids standard Python libraries to demonstrate manual memory manag
  
  [x] **Stage 3:** Data Model (Immutable PatientRecord with Audit Trail)
  
- [ ] **Stage 4:** Logic Layer (Recursive Merge Sort & Chained HashMap)
+ [x] **Stage 4:** Logic Layer (Recursive Merge Sort & Chained HashMap)
  
  [ ] **Stage 5:** Abstraction Layer (Patient Factory Pattern)
  
