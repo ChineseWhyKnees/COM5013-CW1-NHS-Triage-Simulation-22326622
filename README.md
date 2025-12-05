@@ -12,7 +12,7 @@ This project avoids standard Python libraries to demonstrate manual memory manag
  
  [x] **Stage 2:** Linear Data Structures (LinkedQueue, LinkedStack, CircularQueue)
  
- [ ] **Stage 3:** Data Model (Immutable PatientRecord with Audit Trail)
+ [x] **Stage 3:** Data Model (Immutable PatientRecord with Audit Trail)
  
  [ ] **Stage 4:** Logic Layer (Recursive Merge Sort & Chained HashMap)
  
