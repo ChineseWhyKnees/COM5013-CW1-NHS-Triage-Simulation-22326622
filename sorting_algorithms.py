@@ -68,33 +68,32 @@ def merge_sort(items: List[T]) -> List[T]:
     return _merge(sorted_left, sorted_right)
 
 def _merge(left: List[T], right: List[T]) -> List[T]:
-    """
+   """
     Helper function to merge two sorted lists into a single sorted sequence.
     
-    Logic:
-        Maintains pointers (indices) for both lists.
-        Compares the head of both lists using the object's comparison logic.
-        Appends the smaller (or equal) element to the result list.
-        
-    Complexity: O(N) where N is the total number of elements in both lists.
+    FIX NOTE:
+        This function implements a 'Left-Default' stability mechanism.
+        By checking `if right < left`, we ensure that equal elements 
+        default to the `else` block (picking left). This strictly preserves 
+        FIFO order for patients with identical priority.
+    
+    Complexity: O(N) linear time.
     """
     merged_result = []
     left_index = 0
     right_index = 0
     
     while left_index < len(left) and right_index < len(right):
-        
-  # --- STABILITY MECHANISM ---
-        # To maintain sort stability (choosing Left first when items are equal),
-        # we check if Right is strictly smaller than Left.
-        # If right < left: Right is smaller, append Right.
-        # Else (left <= right): Left is smaller or equal, append Left.
-        if left[left_index] < right[right_index]:
-            merged_result.append(left[left_index])
-            left_index += 1
-        else:
+        # FIX: Check if Right is STRICTLY smaller.
+        # If Right < Left: Pick Right (it's more urgent).
+        # Else (Right >= Left): Pick Left (it's older or equal).
+        # This guarantees FIFO stability for ties.
+        if right[right_index] < left[left_index]:
             merged_result.append(right[right_index])
             right_index += 1
+        else:
+            merged_result.append(left[left_index])
+            left_index += 1
             
     # Append any remaining elements from the left list
     if left_index < len(left):
@@ -104,4 +103,5 @@ def _merge(left: List[T], right: List[T]) -> List[T]:
     if right_index < len(right):
         merged_result.extend(right[right_index:])
         
+
     return merged_result
