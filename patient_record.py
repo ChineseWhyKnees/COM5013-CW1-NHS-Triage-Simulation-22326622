@@ -151,13 +151,15 @@ class patientrecord:
         """
         if not isinstance(other, patientrecord):
             return NotImplemented
-            
+        # 1. Primary Key: Medical Priority (Lower P = Higher Urgency)
         if self._priority != other._priority:
-            # Note: Lower integer equals Higher Priority in this system
             return self._priority < other._priority
             
-        return self._nhs_number < other._nhs_number
+        # 2. Secondary Key: NHS Number (Arrival Order)
+        # FIX: Cast to int() so "10" is correctly treated as larger than "2".
+        return int(self._nhs_number) < int(other._nhs_number)
 
     def __repr__(self) -> str:
         """Provides a string representation for debugging and logging."""
+
         return f"[PatientRecord: {self._nhs_number} | {self._last_name}, {self._first_name} | P:{self._priority} | BT:{self._blood_type}]"
