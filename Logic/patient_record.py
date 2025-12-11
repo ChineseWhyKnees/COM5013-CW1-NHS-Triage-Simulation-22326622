@@ -26,7 +26,7 @@ from typing import TYPE_CHECKING
 # Forward declaration to prevent Circular Import Error at runtime.
 # This allows the Type Checker to see 'linkedstack' before the module is fully loaded.
 if TYPE_CHECKING:
-    from linked_structures import linkedstack
+    from Structures.linked_structures import linkedstack
 
 class patientrecord:
     """

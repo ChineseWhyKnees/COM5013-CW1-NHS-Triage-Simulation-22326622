@@ -26,12 +26,12 @@ DESCRIPTION:
 """
 
 # Imports all the custom classes (adhering to snake_case)
-from patient_generator import patientdatagenerator
-from patient_factory import patientfactory
-from linked_structures import linkedqueue, linkedstack
-from array_structures import circularqueue 
-from hashmap import hashmap
-from sorting_algorithms import merge_sort
+from Logic.patient_generator import patientdatagenerator
+from Logic.patient_factory import patientfactory
+from Structures.linked_structures import linkedqueue, linkedstack
+from Structures.array_structures import circularqueue 
+from Structures.hashmap import hashmap
+from Logic.sorting_algorithms import merge_sort
 import time
 import sys
 

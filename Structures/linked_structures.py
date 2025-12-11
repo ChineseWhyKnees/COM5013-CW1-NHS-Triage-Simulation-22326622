@@ -20,7 +20,7 @@ DEPENDENCIES:
     node.py (The atomic wrapper)
 """
 
-from node import node  # Import the custom Node primitive
+from Structures.node import node  # Import the custom Node primitive
 
 class linkedstack:
     """

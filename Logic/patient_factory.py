@@ -23,8 +23,8 @@ DESCRIPTION:
     during initialisation, preventing hash collisions before the LCG takes over.
 """
 
-from patient_generator import patientdatagenerator
-from patient_record import patientrecord
+from Logic.patient_generator import patientdatagenerator
+from Logic.patient_record import patientrecord
 
 class patientfactory:
     """

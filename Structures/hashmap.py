@@ -20,7 +20,7 @@ DESCRIPTION:
     (search time becomes O(N/k)) rather than failure.
 """
 
-from node import node 
+from Structures.node import node 
 
 class hashmap:
     """
