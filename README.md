@@ -159,8 +159,8 @@ one maps to a part of the underlying code:
    ``run_diagnostics`` function.  This runs a series of performance tests
    including sorting lists of increasing size, comparing the linked queue to a
    Python list for dequeue speed, exercising the circular queue’s overflow
-   behaviour and testing the hash map under heavy collision load also
-   and validates data integrity for values exceeding 64-bit architectural limits.
+   behaviour and testing the hash map under heavy collision load and
+   validates data integrity for values exceeding 64-bit architectural limits.
    It does not alter the main simulation state.
 
 5. **View & Clear Admin Action Log (Stack Unwind)** – Walks through the
@@ -173,7 +173,7 @@ one maps to a part of the underlying code:
    up to three patients from the pharmacy queue (updating their status to
    “Discharged Home” and removing them from the master list), processes all
    samples in the lab buffer (marking them as analysed), then admits five
-   new patients via the patient factory.  New patients are added to the
+   new patients via the patient factory. New patients are added to the
    hash map and master list and the list is re‑sorted with merge sort.
 
 7. **Logout** – Ends the session and exits the program.
@@ -195,5 +195,9 @@ structures behave as expected:
 * **Collision test** – Fills the hash map beyond its initial capacity and
   verifies that all items can still be retrieved, demonstrating effective
   collision handling and resizing.
+
+* **Integer test** - Verifies that the system can store very large numbers
+* without corruption. This test creates a node containing a value much larger
+* than a 64-bit integer (using 1**100), and ensures the value is retrived intact.
 
 These tests can be run from within the program via the diagnostics menu (option 4).
