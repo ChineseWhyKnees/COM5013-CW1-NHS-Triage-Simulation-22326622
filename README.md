@@ -198,6 +198,6 @@ structures behave as expected:
 
 * **Integer test** - Verifies that the system can store very large numbers
   without corruption. This test creates a node containing a value much larger
-  than a 64-bit integer (using 1**100), and ensures the value is retrived intact.
+  than a 64-bit integer (using 1**100), and ensures the value is retrieved intact.
 
 These tests can be run from within the program via the diagnostics menu (option 4).
