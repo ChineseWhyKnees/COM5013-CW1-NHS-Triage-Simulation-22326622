@@ -1,43 +1,70 @@
 """
-FILE: patient_generator.py
+FILE: patient_generator
 AUTHOR: 22326622
 MODULE: COM5013 Algorithms & Data Structures
 
-DESCRIPTION:
-    Provides stateless, stochastic data generation services for the simulation.
-    
-    ARCHITECTURAL JUSTIFICATION (FIRST PRINCIPLES):
-    This module implements a custom Linear Congruential Generator (LCG) to 
-    produce pseudo-random indices without reliance on the standard library's 
-    'random' module (Mersenne Twister).
-    
-    This choice was driven by:
-    1. Memory Efficiency: The LCG requires only a single integer state, whereas
-       Mersenne Twister requires a 624-word state vector.
-    2. Determinism: Allows absolutely reproducible 'White Box' stress testing.
-       By controlling the seed, we guarantee the exact same stream of patients,
-       which is required to verify the Stability of the Merge Sort engine.
+This module supplies the raw ingredients for building patient records.
+It defines a simple **linear congruential generator (LCG)**, a lightweight
+algorithm for producing sequences of numbers that appear random. These
+numbers are used to pick items from static lists of first names, last names,
+dates of birth, ailments, symptoms, medications and blood types. By
+providing its own random number generator rather than using Python's
+``random`` module, the codebase gains two important properties:
+
+* **Determinism:** if the initial seed is the same, the sequence of numbers
+  produced by the LCG (and therefore the sequence of selected names and
+  attributes) will also be the same. This is helpful when testing the
+  simulation because it makes runs repeatable.
+* **Simplicity:** an LCG keeps only a single integer in memory, making it
+  easy to understand and predict. The bigger Mersenne Twister engine used
+  by Python's ``random`` module is more complex and has a much larger
+  internal state.
+
+The :class:`patientdatagenerator` class defined here is used by
+:class:`Logic.patient_factory.patientfactory` to assemble complete patient records.
+Other modules never need to interact with the LCG directly; they simply call
+methods on this class to pick items from its data lists.
 """
 
 class patientdatagenerator:
     """
-    A custom implementation of a Linear Congruential Generator (LCG).
-    
-    Formula: X_{n+1} = (a * X_n + c) % m
-    
-    Operational characteristics:
-        Non-destructive: Sampling methods do not alter source lists.
-        Deterministic seeding: Allows reproducible test sequences.
+    Generate pseudo-random patient attributes from fixed lists.
+
+    An instance of this class maintains its own internal state (the LCG
+    seed) and exposes helper methods to choose single items or multiple
+    items from the provided datasets. The lists themselves are never
+    modified; repeated calls to pick from them will simply return different
+    elements. Because the same seed will always produce the same sequence
+    of indices, you can get predictable results for testing by
+    initialising the generator with a known seed.
+
+    The underlying random number formula used here is
+
+        ``X_{n+1} = (a * X_n + c) % m``
+
+    where ``a``, ``c`` and ``m`` are fixed constants chosen to give good
+    statistical properties. You do not need to understand the mathematics to
+    use this class; it is sufficient to know that it produces a stream of
+    seemingly random numbers.
     """
 
     def __init__(self, seed=12345):
         """
-        Initialises the generator state and loads static datasets.
-        
-        Args:
-            seed (int): Initial state for the LCG algorithm. Defaults to 12345.
-                        Keeping this constant ensures the 'Random' sequence 
-                        is identical every run (Stability Testing).
+        Create a new generator with optional initial seed.
+
+        Parameters:
+            seed: an integer used to start the linear congruential generator.
+                If you provide the same seed on different runs, the order
+                of items returned by the random pick methods will also be
+                identical. The default seed (12345) is arbitrary; you can
+                change it to vary the pseudo-random sequence.
+
+        During initialisation the generator also defines several lists of
+        possible values for patient attributes. These datasets are stored
+        directly in the object to avoid the need for external files. They
+        include names, medical conditions, symptoms, medications, dates of
+        birth and blood types. The lists are constant and are not altered
+        when sampling from them.
         """
         self.seed = seed
         
@@ -121,16 +148,20 @@ class patientdatagenerator:
 
     def _generate_random_index(self, list_length: int) -> int:
         """
-        Computes a pseudo-random integer index via LCG.
-        
-        Formula: X_{n+1} = (aX_n + c) mod m
-        Parameters (ANSI C standard):
-            a = 1103515245
-            c = 12345
-            m = 2^31
-            
+        Compute a new pseudo-random index for selecting from a list.
+
+        The generator updates its internal ``seed`` using the LCG formula and
+        then maps that state to a value between 0 and ``list_length - 1`` by
+        taking the remainder after division. This ensures the index is
+        always valid for the target list. The constants ``a``, ``c`` and
+        ``m`` used in the formula are chosen for compatibility with the
+        historical ANSI C standard LCG.
+
+        Parameters:
+            list_length: the length of the list you intend to sample from.
+
         Returns:
-            int: A valid index within the range [0, list_length-1].
+            An integer index suitable for use with Python list indexing.
         """
         # Update internal state
         self.seed = (self.seed * 1103515245 + 12345) % (2**31)
@@ -140,13 +171,15 @@ class patientdatagenerator:
 
     def get_random_item(self, source_list: list):
         """
-        Retrieves a single element from the provided source list using LCG sampling.
-        
-        Args:
-            source_list (list): The population to sample from.
-            
+        Choose a single element from a list using the internal LCG.
+
+        Parameters:
+            source_list: a Python list of any type. If the list is empty,
+                ``None`` will be returned.
+
         Returns:
-            Any/None: The selected element, or None if the source_list is empty.
+            The element at a pseudo-random position within ``source_list``, or
+            ``None`` if the list has no elements.
         """
         if not source_list:
             return None
@@ -156,14 +189,21 @@ class patientdatagenerator:
 
     def get_random_items(self, source_list: list, count: int) -> list:
         """
-        Retrieves a subset of elements from the source list.
-        
-        Args:
-            source_list (list): The population to sample from.
-            count (int): The number of iterations/samples required.
-            
+        Choose multiple elements from a list using repeated LCG sampling.
+
+        This method calls the LCG as many times as specified by ``count`` and
+        collects the elements at those pseudo-random positions. The same
+        element from ``source_list`` may appear more than once in the returned
+        list because the generator does not track previous selections.
+
+        Parameters:
+            source_list: a Python list of any type from which items will be
+                selected. If the list is empty or ``count`` exceeds the list
+                length, an empty list is returned.
+            count: the number of items you wish to pick.
+
         Returns:
-            list: A list of selected elements. Returns empty list on validation failure.
+            A list containing ``count`` items selected from ``source_list``.
         """
         random_items = []
         list_length = len(source_list)
@@ -177,6 +217,5 @@ class patientdatagenerator:
             index = self._generate_random_index(list_length)
             selected_item = source_list[index]
             random_items.append(selected_item)
-
 
         return random_items

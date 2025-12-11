@@ -1,56 +1,66 @@
 """
 FILE: linked_structures.py
-AUTHOR: Brayden Louis Smith (22326622)
+AUTHOR: 22326622
 MODULE: COM5013 Algorithms & Data Structures
 
-DESCRIPTION:
-    Implements manual, pointer-based linear data structures to satisfy 
-    the "First Principles" project constraint.
-    
-    1. LinkedQueue: A FIFO structure using Head/Tail pointers. 
-       Selected to replace Python's 'list.pop(0)' to guarantee O(1) 
-       time complexity during high-volume triage.
-       
-    2. LinkedStack: A LIFO structure.
-       Used specifically for the PatientRecord 'history_log' (Audit Trail)
-       to ensure that the most recent clinical event is always accessible 
-       at the head of the list in O(1) time.
+This module defines two fundamental linked data structures: a **stack** and
+a **queue**. Both are implemented using a basic :class:`Structures.node.node` class
+that stores a value and a pointer to the next node. Linked structures
+serve as the building blocks for many parts of the triage simulation:
 
-DEPENDENCIES:
-    node.py (The atomic wrapper)
+* The history log on each patient record uses a stack so that the most
+  recent event can be accessed quickly.
+* The triage and pharmacy lines use a queue so that patients are served in
+  the order they arrive first-in, first-out (FIFO).
+
+By implementing these structures manually rather than relying on Python's
+list type we avoid hidden linear-time operations such as ``pop(0)`` and
+learn how pointers can be manipulated directly to achieve constant time
+inserts and removals. The code here is careful not to shift any
+elements; instead it updates node references to move the head or tail.
+
+Other modules in the simulation import these classes to store patients in
+queues (for example, the pharmacy queue) and to keep track of actions in
+the administrator audit log. Because the structures are simple and
+self-contained, they can be reused in multiple contexts without
+modification.
 """
 
-from Structures.node import node  # Import the custom Node primitive
+from Structures.node import node # Import the custom Node primitive
 
 class linkedstack:
     """
-    Implements a Last-In, First-Out (LIFO) stack using a singly linked list.
-    
-    ARCHITECTURAL JUSTIFICATION:
-    While Python lists can function as stacks via append/pop, a Linked Stack
-    is implemented here to demonstrate understanding of pointer manipulation
-    at the head of a list (Push/Pop at index 0 without shifting).
-    
-    Time Complexity:
-        Push: O(1) - Constant time pointer update.
-        Pop: O(1) - Constant time pointer update.
-        Peek: O(1) - Constant time access.
+    A last-in, first-out (LIFO) stack implemented with linked nodes.
+
+    Each time a value is pushed onto the stack a new node is created
+    and inserted at the front. Popping removes the node at the front
+    and returns its value. Because nodes are linked, no shifting of
+    elements is required; pointer updates suffice. The stack keeps
+    track of how many items it contains via a ``size`` attribute.
+
+    This structure is used in the simulation for logging events, both
+    within patient records (to record status history) and within the
+    administrator interface (to record actions). It ensures that the
+    most recent entry can always be retrieved immediately.
     """
     def __init__(self):
         """
-        Initialises stack state with null pointers.
+        Create an empty stack.
+
+        The ``top_item`` pointer starts as ``None`` indicating that the
+        stack contains no nodes. The ``size`` counter is set to zero.
         """
         self.top_item = None
         self.size = 0
 
     def push(self, value):
         """
-        Inserts an element at the top of the stack.
-        
-        Logic:
-            1. Allocate new Node.
-            2. Link new Node -> Current Top.
-            3. Reassign Top -> New Node.
+        Add a value to the top of the stack.
+
+        A new :class:`Structures.node.node` is created to hold ``value``.
+        Its ``next_node`` pointer is set to the current ``top_item`` so
+        that it becomes the new first element. The ``top_item`` pointer
+        and ``size`` counter are then updated to reflect the new state.
         """
         # 1. Allocation
         new_node = node(value)
@@ -64,10 +74,12 @@ class linkedstack:
 
     def pop(self):
         """
-        Removes and returns the element at the top of the stack.
-        
-        Returns:
-            The value of the popped element, or None if empty.
+        Remove and return the most recently added value.
+
+        If the stack is empty this method returns ``None``. Otherwise it
+        retrieves the current ``top_item``, moves the ``top_item`` pointer
+        to the next node in the chain and decrements ``size``. The value
+        stored in the removed node is returned to the caller.
         """
         if self.is_empty():
             return None
@@ -84,43 +96,66 @@ class linkedstack:
 
     def peek(self):
         """
-        Returns the payload of the top element without structural modification.
+        Look at the value on the top of the stack without removing it.
+
+        Returns:
+            The value stored in the top node, or ``None`` if the stack is
+            empty.
         """
         if self.is_empty():
             return None
         return self.top_item.get_value()
 
     def is_empty(self) -> bool:
-        """Boolean check for empty state."""
+        """
+        Return ``True`` if the stack has no elements, ``False`` otherwise.
+        """
         return self.size == 0
 
     def get_size(self) -> int:
-        """Returns current node count."""
+        """
+        Return the number of items currently stored in the stack.
+        """
         return self.size
 
 
 class linkedqueue:
     """
-    Implements a First-In, First-Out (FIFO) queue using a singly linked list.
-    
-    ARCHITECTURAL JUSTIFICATION (LO2):
-    This structure is the direct result of the architectural rescope.
-    Unlike 'list.pop(0)' which shifts N elements (O(N)), this implementation
-    simply advances the 'head' pointer (O(1)), satisfying the NHS 
-    latency requirement for deterministic patient discharge.
+    A first-in, first-out (FIFO) queue implemented with linked nodes.
+
+    Values are added at the tail of the queue and removed from the head.
+    Because the queue maintains explicit pointers to both ends, enqueue
+    and dequeue operations run in constant time. A ``size`` counter
+    tracks how many nodes are present.
+
+    This structure replaces the use of ``list.pop(0)`` which would be
+    inefficient for large lists. It is used throughout the simulation to
+    manage patients waiting for treatment (for example, the pharmacy
+    queue). The semantics ensure that patients are served in the order
+    they arrive.
     """
     def __init__(self):
         """
-        Initialises queue with null head and tail pointers.
+        Create an empty queue.
+
+        Both ``head`` and ``tail`` pointers start as ``None``, indicating
+        that there are no nodes in the chain. The ``size`` attribute is
+        set to zero. As items are enqueued or dequeued the pointers and
+        size counter are updated accordingly.
         """
-        self.head = None  # Pointer for Dequeue operations
-        self.tail = None  # Pointer for Enqueue operations
+        self.head = None # Pointer for Dequeue operations
+        self.tail = None # Pointer for Enqueue operations
         self.size = 0
 
     def enqueue(self, value):
         """
-        Appends an element to the tail of the queue.
-        Complexity: O(1).
+        Add a value to the end of the queue.
+
+        A new :class:`Structures.node.node` is created and attached to the
+        current ``tail``. If the queue is empty the new node becomes both
+        the ``head`` and ``tail``. Otherwise the ``next_node`` of the
+        current tail is set to point to the new node and ``tail`` is
+        updated. The ``size`` counter is incremented.
         """
         new_node = node(value)
         
@@ -138,10 +173,13 @@ class linkedqueue:
 
     def dequeue(self):
         """
-        Removes and returns the element at the head of the queue.
-        
-        Complexity: O(1) Strictly Constant Time.
-        This is the critical path operation for the Triage System.
+        Remove and return the oldest value in the queue.
+
+        If the queue is empty this method returns ``None``. Otherwise it
+        retrieves the value from the ``head`` node, moves ``head`` to the
+        next node in the chain and decrements ``size``. If the queue
+        becomes empty as a result, the ``tail`` pointer is also reset to
+        ``None``. This operation runs in constant time.
         """
         if self.is_empty():
             return None
@@ -161,12 +199,15 @@ class linkedqueue:
 
     def is_empty(self) -> bool:
         """
-        Checks if queue is empty.
+        Return ``True`` if the queue contains no elements, ``False`` otherwise.
         """
         return self.size == 0
     
     def get_size(self) -> int: 
         """
-        Returns the current number of items in the queue. O(1).
+        Return the number of items currently stored in the queue.
+        
+        Because the queue maintains a ``size`` attribute, this method
+        simply returns that value without needing to traverse the chain.
         """
         return self.size

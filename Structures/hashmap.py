@@ -3,42 +3,62 @@ FILE: hashmap.py
 AUTHOR: 22326622
 MODULE: COM5013 Algorithms & Data Structures
 
-DESCRIPTION:
-    Implements a Fixed-Size Hash Map from first principles.
-    
-    ARCHITECTURAL JUSTIFICATION (LO2):
-    Native Rejection:
-    This module explicitly rejects Python's built-in dictionary to demonstrate 
-    the underlying mechanics of hashing and collision resolution.
-    
-    Separate Chaining:
-    The system utilises Linked Lists (via the 'node' class) to handle 
-    collisions within buckets. This strategy is chosen over Open Addressing 
-    because Open Addressing suffers from 'Primary Clustering' as the load 
-    factor approaches 1.0. In a hospital context, we cannot risk the database 
-    'locking up' during a surge. Separate Chaining ensures graceful degradation 
-    (search time becomes O(N/k)) rather than failure.
+This module implements a simple **hash map**, a data structure that stores
+key-value pairs and allows values to be looked up quickly by their keys.
+Although Python provides its own dictionary type, this implementation
+recreates the basics from the ground up to make the mechanics explicit.
+
+Keys are strings (such as patient NHS numbers) and values can be any
+object (commonly :class:`Logic.patient_record.patientrecord` instances). To
+decide where to place a key-value pair in the underlying array, the
+hash map computes a small integer called a *hash*. If multiple keys
+produce the same hash value, they are stored together in a short linked
+list (this technique is known as **separate chaining**). This approach
+ensures that the map continues to function correctly even when the number
+of stored elements grows beyond the number of available buckets.
+
+The map automatically doubles its capacity when the *load factor* (the
+ratio of stored elements to buckets) exceeds a threshold. Resizing the
+buckets array and re-inserting the existing elements keeps operations like
+insertion and lookup efficient on average.
+
+This data structure underpins the patient database in the main program,
+allowing records to be added and retrieved using their NHS numbers.
 """
 
 from Structures.node import node 
 
 class hashmap:
     """
-    Implements an associative array (Key-Value Store).
-    
-    Collision Resolution Strategy: 
-         Separate Chaining via Linked Lists.
-         
-    Time Complexity:
-         Average Case: O(1) for Put/Get operations.
-         Worst Case: O(N) (if all keys hash to the same bucket).
+    A minimal associative array for storing key-value pairs.
+
+    This class provides the familiar operations of inserting (`put`) and
+    retrieving (`get`) items by key. Internally it uses a fixed-length
+    list of buckets to spread keys out. Each bucket holds a chain of
+    :class:`Structures.node.node` objects that store the key and its
+    associated value. When many keys map to the same bucket they are
+    appended to the chain, which may degrade performance but will never
+    cause a failure. When the number of stored items becomes too large
+    relative to the number of buckets the map is *resized* (the number of
+    buckets is doubled and all existing items are rehashed).
+
+    The time complexity for inserting and retrieving items is generally
+    constant (O(1)) on average, although it can become linear (O(n)) in the
+    worst case when many keys collide in the same bucket.
     """
     def __init__(self, capacity=10):
         """
-        Initialises buckets for separate chaining.
-        
-        Args:
-            capacity (int): The initial number of buckets.
+        Create a new hash map with a specified initial capacity.
+
+        Parameters:
+            capacity: the number of buckets to allocate. Each bucket is
+                initially empty. Choosing a power of two (e.g. 10, 20, 40)
+                simplifies some resizing strategies, but any positive
+                integer will work.
+
+        The map starts empty (`size` is zero) and uses a default maximum
+        load factor of 0.7. When the ratio of `size` to `capacity`
+        reaches this threshold the map will automatically resize.
         """
         self.capacity = capacity
         self.size = 0
@@ -50,9 +70,18 @@ class hashmap:
 
     def _hash(self, key: str) -> int:
         """
-        Computes index via ASCII summation modulo capacity.
-        
-        Formula: sum(ASCII) % capacity
+        Compute a bucket index for a given string key.
+
+        A very simple hash function sums the numeric (ASCII) codes of the
+        characters in the key and then takes the remainder when dividing by
+        the current capacity. The result is guaranteed to be a valid
+        index into the `buckets` list.
+
+        Parameters:
+            key: the string to hash.
+
+        Returns:
+            An integer between 0 and ``capacity - 1``.
         """
         hash_sum = 0
         for char in key:
@@ -61,10 +90,15 @@ class hashmap:
 
     def _resize(self):
         """
-        Doubles the map capacity and rehashes all existing elements.
-        Executed when the Load Factor is exceeded to maintain O(1) average access.
-        
-        Complexity: O(N) - Must touch every existing element.
+        Double the number of buckets and re-insert all existing items.
+
+        When the load factor limit is reached this method creates a new
+        buckets list twice the size of the current one and then iterates
+        over every existing key-value pair, placing each into its new
+        bucket based on the resized capacity. Because each item must be
+        touched this operation runs in linear time with respect to the
+        number of stored items. After resizing the map's performance will
+        improve because the average chain length has been reduced.
         """
         print(f"--- [RESIZE] Capacity doubled from {self.capacity} to {self.capacity * 2} ---")
         
@@ -84,9 +118,22 @@ class hashmap:
 
     def put(self, key: str, value):
         """
-        Inserts or updates a Key-Value pair.
-        
-        Complexity: O(1) Average.
+        Insert a new key-value pair or update an existing one.
+
+        If the map's current load factor exceeds the maximum allowed this
+        method calls :meth:`_resize` before inserting the new item. It
+        computes the bucket index for the key using :meth:`_hash`. If no
+        chain exists at that index a new node is created and placed there;
+        otherwise the method walks down the chain:
+
+        * If an existing node has the same key, its value is replaced with
+          the new value.
+        * If the end of the chain is reached and no matching key is found,
+          a new node is appended to the chain.
+
+        Parameters:
+            key: a string used to locate the associated value later.
+            value: the object to store.
         """
         # Check Load Factor and Trigger Resize if threshold is met
         if self.size / self.capacity >= self.MAX_LOAD_FACTOR:
@@ -123,10 +170,19 @@ class hashmap:
 
     def get(self, key: str):
         """
-        Retrieves value associated with key.
-        
+        Retrieve the value associated with a given key.
+
+        The bucket index for the key is computed using :meth:`_hash`, then
+        the chain at that bucket is walked to find a node whose stored key
+        matches the provided key. If such a node is found its value is
+        returned; otherwise ``None`` is returned.
+
+        Parameters:
+            key: the string identifying the item to look up.
+
         Returns:
-            The value associated with the key, or None if not found.
+            The value stored with this key, or ``None`` if the key is not
+            present in the map.
         """
         index = self._hash(key)
         current = self.buckets[index]
@@ -139,3 +195,4 @@ class hashmap:
             current = current.get_next_node()
             
         return None
+    

@@ -3,43 +3,43 @@ FILE: node.py
 AUTHOR: 22326622
 MODULE: COM5013 Algorithms & Data Structures
 
-DESCRIPTION:
-    Defines the fundamental atomic unit for all non-linear data structures 
-    in the NHS Triage System simulation.
-    
-    ARCHITECTURAL JUSTIFICATION (FIRST PRINCIPLES):
-    In adherence to the project's constraint of rejecting high-level abstractions, 
-    this class manually manages memory references via the 'next_node' pointer. 
-    
-    This approach is architected specifically to circumvent the O(N) memory 
-    shifting penalties inherent in Python's standard dynamic arrays (lists). 
-    By using discrete Nodes, we enable O(1) insertion and deletion at the 
-    head of a queue, a critical requirement for safety-critical latency 
-    within the triage environment.
+This module defines the simplest building block used by the custom linked
+structures in the triage simulation. A **node** stores a value (such as
+a patient record or an action string) and a reference to another node. By
+linking nodes together in chains we can create stacks, queues and other
+data structures without relying on Python's built-in list type. The
+purpose of doing this from scratch is to make the cost of operations
+explicit: adding or removing a node at the beginning of a chain takes
+constant time because only a pointer needs to be updated.
+
+The :class:`node` class itself is very small; it exposes methods to get
+and set the stored value and the link to the next node. Other modules
+build on top of it to assemble more complex behaviour.
 """
 
 class node:
     """
-    Represents a single node in a linked data structure.
-    
-    This class functions as the foundational building block for:
-    1. LinkedStack (LIFO) - Used for Patient Audit Trails.
-    2. LinkedQueue (FIFO) - Used for the Triage Line.
-    3. HashMap Buckets - Used for Separate Chaining collision resolution.
-    
-    It couples a data element (value) with a reference (pointer) to the
-    next node in the chain, effectively decoupling storage from contiguous memory.
+    A minimal object for linking values together.
+
+    Each node holds two things: a ``value`` and a reference to the next
+    node in a chain. When many nodes are linked in sequence they form
+    basic data structures such as stacks, queues or chains of entries in
+    a hash map. Separating values into individual nodes allows us to
+    insert and remove items at the front of a chain without moving any
+    other elements in memory.
     """
 
     def __init__(self, value, next_node=None):
         """
-        Initialises a new Node instance.
+        Create a new node.
 
-        Args:
-            value: The data payload (e.g., PatientRecord object) to be 
-                   stored within this memory block.
-            next_node (node, optional): The reference to the subsequent node
-                   in the linked chain. Defaults to None (Tail).
+        Parameters:
+            value: the data to store in this node. It can be of any type,
+                such as a patient record or a string describing an event.
+            next_node: an optional reference to another node. When linking
+                nodes together this parameter points to the node that
+                follows this one. By default it is ``None`` to signal
+                that this node is the end of a chain.
         """
         self.value = value
         
@@ -49,37 +49,40 @@ class node:
 
     def get_value(self):
         """
-        Retrieves the data payload stored in this node.
-        
-        Complexity: O(1) - Direct memory access.
-        
+        Return the value stored in this node.
+
+        This is a simple accessor that returns whatever was provided when
+        the node was created or later modified via :meth:`set_next_node`.
+
         Returns:
-            The value stored in the node.
+            The stored value.
         """
         return self.value
 
     def get_next_node(self):
         """
-        Retrieves the reference to the next node in the chain.
-        
-        Used by LinkedQueue and LinkedStack to traverse the structure 
-        without indexing/offsets.
-        
+        Return the next node in the chain.
+
+        Other data structures use this method to move from one node to the
+        next without needing to know the internal representation of the
+        chain.
+
         Returns:
-            node: The next Node object, or None if this is the tail.
+            The node referenced by ``next_node``, or ``None`` if this is
+            the last node.
         """
         return self.next_node
 
     def set_next_node(self, next_node):
         """
-        Updates the reference to the next node in the chain.
-        
-        CRITICAL PERFORMANCE MECHANIC:
-        Changing this reference is a strictly O(1) operation. 
-        Unlike inserting into an array, which requires shifting N elements,
-        this method simply updates a single memory address.
+        Set the link to the next node in the chain.
 
-        Args:
-            next_node (node): The Node to set as the next node.
+        Updating the ``next_node`` pointer does not move any data; it
+        simply changes where this node points. This is why linked
+        structures can insert or remove items in constant time.
+
+        Parameters:
+            next_node: the node that should follow this one. Use ``None``
+            to mark this node as the end of a chain.
         """
         self.next_node = next_node
