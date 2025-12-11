@@ -208,8 +208,6 @@ def run_diagnostics():
     print_header("DIAGNOSTICS COMPLETE")
     input("\nPress Enter to return to main menu...")
 
-
-
 # --- MAIN APPLICATION LOGIC ---
 def main():
     # 0. Security Check
@@ -246,16 +244,17 @@ def main():
     all_patients = merge_sort(all_patients)
     print_success(f"Successfully admitted {len(all_patients)} patients.")
     print_info("Database Indexed via HashMap.")
-
-    # 3. Interactive Menu
+        
+         # 3. Interactive Menu
     while True:
         print_header("HOSPITAL ADMINISTRATION SYSTEM (HAS) - v3.0")
         print(f"   {Colors.CYAN}[1]{Colors.ENDC} Patient Search (NHS Number) & Hand-off")
         print(f"   {Colors.CYAN}[2]{Colors.ENDC} View Recent Admissions (Sorted by Priority)")
-        print(f"   {Colors.CYAN}[3]{Colors.ENDC} System Statistics & Queue Status")
+        print(f"   {Colors.CYAN}[3]{Colors.ENDC} System Statistics & Queue Status (Micro)")
         print(f"   {Colors.CYAN}[4]{Colors.ENDC} Run System Diagnostics (Stress Test)")
         print(f"   {Colors.CYAN}[5]{Colors.ENDC} View & Clear Admin Action Log (Stack Unwind)")
-        print(f"   {Colors.CYAN}[6]{Colors.ENDC} Logout")
+        print(f"   {Colors.CYAN}[6]{Colors.ENDC} Discharge and Refill (Macro)")
+        print(f"   {Colors.CYAN}[7]{Colors.ENDC} Logout")
         print("-" * 60)
         
         choice = input(f"{Colors.BOLD}Select Option: {Colors.ENDC}")
@@ -270,13 +269,20 @@ def main():
             if record:
                 print(f"\n{Colors.GREEN}FOUND:{Colors.ENDC} {record.last_name}, {record.first_name}")
                 print(f"Priority {record.priority} | Blood Type: {record.blood_type}") 
-                print(f"Status:   {record.get_current_status()}")
+                current_status = record.get_current_status() # Capture status
+                print(f"Status:   {current_status}")
                 
-                print(f"\n{Colors.UNDERLINE}[ACTION MENU]{Colors.ENDC}")
-                print("1. Send to Pharmacy (LinkedQueue - O(1) FIFO)")
-                print("2. Send to Blood Lab (CircularQueue - Fixed Buffer)")
-                print("3. View History Log (LinkedStack - LIFO)")
-                action = input("Select Action: ")
+                # --- LOGIC FIX: BLOCK DISCHARGED PATIENTS ---
+                if "Discharged" in current_status:
+                    print(f"\n{Colors.FAIL}ACTION DENIED:{Colors.ENDC} Patient has been discharged.")
+                    print("To re-admit, please use the Refill cycle or generate a new record.")
+                else:
+                    # ONLY Show Action Menu if they are NOT discharged
+                    print(f"\n{Colors.UNDERLINE}[ACTION MENU]{Colors.ENDC}")
+                    print("1. Send to Pharmacy (LinkedQueue - O(1) FIFO)")
+                    print("2. Send to Blood Lab (CircularQueue - Fixed Buffer)")
+                    print("3. View History Log (LinkedStack - LIFO)")
+                    action = input("Select Action: ")
                 
                 if action == '1':
                     record.update_status("Sent to Pharmacy")
@@ -318,7 +324,7 @@ def main():
             for p in all_patients[:5]:
                 print(f"ID: {p.nhs_number} | {Colors.FAIL}P:{p.priority}{Colors.ENDC} | {p.last_name}, {p.first_name}")
             input("\nPress Enter to return...")
-
+            
         elif choice == '3':
             print(f"\n{Colors.BOLD}--- System Statistics ---{Colors.ENDC}")
             print(f"Database Capacity: {database.capacity} buckets")
@@ -350,30 +356,93 @@ def main():
                     
             input("\nPress Enter to return...")
 
+
         elif choice == '4':
             admin_audit_log.push("Ran Diagnostics")
             run_diagnostics()
             
         elif choice == '5':
-            # STACK OPERATION: Demonstrate LIFO by popping everything
+            # STACK OPERATION: View with optional Clear/Restore
             print(f"\n{Colors.BOLD}--- Administrator Action Log (LIFO) ---{Colors.ENDC}")
-            print("Unwinding stack (Latest -> Earliest)...")
-            print("-" * 40)
             
             if admin_audit_log.is_empty():
                 print_info("Log is empty.")
             else:
+                print("Unwinding stack for display...")
+                print("-" * 40)
+                
+                # 1. Unwind and Capture
+                # We save items to a list so we can restore them if the user says 'No'
+                temp_history = []
                 count = 1
+                
                 while not admin_audit_log.is_empty():
-                    # POP removes the item from the stack
                     action = admin_audit_log.pop()
                     print(f"{count}. {action}")
+                    temp_history.append(action)
                     count += 1
-            print("-" * 40)
-            print_success("Audit Log cleared.")
-            input("\nPress Enter to return...")
+                    
+                print("-" * 40)
+                
+                # 2. The Toggle
+                confirm = input(f"{Colors.WARNING}Permanently clear this log? (y/n): {Colors.ENDC}").lower()
+                
+                if confirm == 'y':
+                    # Stack is already empty from the loop above, so we just confirm.
+                    print_success("Audit Log cleared.")
+                else:
+                    # 3. Restore Logic
+                    # We must push items back in REVERSE order (Bottom-up) to restore LIFO state.
+                    print("Restoring history...", end="")
+                    for action in reversed(temp_history):
+                        admin_audit_log.push(action)
+                    print(" Done.")
+                    print_info("Log restored.")
 
+            input("\nPress Enter to return...")
+            
         elif choice == '6':
+            print(f"\n{Colors.BOLD}--- Discharge and Refill Cycle ---{Colors.ENDC}")
+            admin_audit_log.push("Executed Discharge & Refill")
+            
+            # 1. DISCHARGE: Process Pharmacy Queue (Simulate departures)
+            print("Discharging Pharmacy... ", end="")
+            discharged_count = 0
+            while not pharmacy_queue.is_empty() and discharged_count < 3:
+                p = pharmacy_queue.dequeue()
+                p.update_status("Discharged Home")
+                # This ensures they vanish from Option [2] "Recent Admissions"
+                if p in all_patients:
+                    all_patients.remove(p)
+                print(f"[{p.nhs_number}]", end=" ")
+                discharged_count += 1
+            print(f"({discharged_count} patients left building)")
+            
+            # 2. PROCESS: Clear Blood Lab Buffer (Simulate analysis complete)
+            print("Processing Lab Buffer...  ", end="")
+            lab_count = 0
+            while not blood_lab_buffer.is_empty():
+                p = blood_lab_buffer.dequeue()
+                p.update_status("Lab Results Analyzed")
+                print(f"[{p.nhs_number}]", end=" ")
+                lab_count += 1
+            print(f"({lab_count} samples analyzed)")
+            
+            # 3. REFILL: Generate new incoming patients (Simulate arrivals)
+            print("Admitting New Patients... ", end="")
+            for _ in range(5):
+                new_patient = main_patient_factory.create_patient()
+                database.put(new_patient.nhs_number, new_patient)
+                all_patients.append(new_patient)
+                print(".", end="", flush=True)
+            
+            # Re-sort the master list so Option [2] stays correct
+            all_patients = merge_sort(all_patients)
+            print(" (5 new admissions processed)")
+            
+            input("\nCycle Complete. Press Enter...")
+
+        elif choice == '7':
             print(f"\n{Colors.BOLD}Logging out...{Colors.ENDC}")
             break
         
