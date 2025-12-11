@@ -28,6 +28,7 @@ from Structures.linked_structures import linkedqueue, linkedstack
 from Structures.array_structures import circularqueue 
 from Structures.hashmap import hashmap
 from Logic.sorting_algorithms import merge_sort
+from Structures.node import node
 # Imports other necessary modules
 import time
 import sys
@@ -216,6 +217,16 @@ def run_diagnostics():
     else:
         print(f"{Colors.FAIL}FAILURE:{Colors.ENDC} Data loss! Recovered {recovered}/15.")
 
+    print("\n--- Testing >64-bit Handling ---")
+    # 2^100 is much larger than the 64-bit limit
+    huge_number = 1**100
+    test_node = node(huge_number)
+
+    if test_node.get_value() == huge_number:
+        print("PASS: System handled the large number successfully.")
+    else:
+        print("FAIL: Data corruption occurred.")
+
     print_header("DIAGNOSTICS COMPLETE")
     input("\nPress Enter to return to main menu...")
 
@@ -269,7 +280,7 @@ def main():
         print("-" * 60)
         
         choice = input(f"{Colors.BOLD}Select Option: {Colors.ENDC}")
-    
+        
         if choice == '1':
             target_id = input("\nEnter Patient NHS Number: ")
             record = database.get(target_id)
@@ -323,7 +334,7 @@ def main():
                             print_info("No history log available for this patient.")
                         else:
                             print(f"Latest Patient Log: {record.history_log.peek()}")
-                    
+
             else:
                 print_error("Patient ID not found in database.")
                 admin_audit_log.push(f"Search Failed: {target_id}")

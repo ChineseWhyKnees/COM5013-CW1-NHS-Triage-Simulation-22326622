@@ -159,8 +159,9 @@ one maps to a part of the underlying code:
    ``run_diagnostics`` function.  This runs a series of performance tests
    including sorting lists of increasing size, comparing the linked queue to a
    Python list for dequeue speed, exercising the circular queue’s overflow
-   behaviour and testing the hash map under heavy collision load.  It does
-   not alter the main simulation state.
+   behaviour and testing the hash map under heavy collision load also
+   and validates data integrity for values exceeding 64-bit architectural limits.
+   It does not alter the main simulation state.
 
 5. **View & Clear Admin Action Log (Stack Unwind)** – Walks through the
    administrator audit log stack, popping each entry to display the most
